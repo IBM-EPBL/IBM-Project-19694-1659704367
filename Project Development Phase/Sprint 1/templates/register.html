@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Register {% endblock %}
+
+{% block content %}
+<h2>Register:</h1><br>
+<!-- {{ url_for('login')}} -->
+<form  onsubmit="password_check()" method = 'post'>
+    <div class="row mb-3">
+        <label for="name" class="col-sm-2 col-form-label">First Name:</label>
+        <div class="col-sm-5">
+            <input type="text" class="form-control" name="fname" id="fname" placeholder="Enter your first name" required>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label for="name" class="col-sm-2 col-form-label">Last Name:</label>
+        <div class="col-sm-5">
+            <input type="text" class="form-control" name="lname" id="lname" placeholder="Enter your last name" required>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label for="email" class="col-sm-2 col-form-label">Email:</label>
+        <div class="col-sm-5">
+            <input type="email" class="form-control" name="email_id" id="email" placeholder="Enter your email" required>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label for="pwd" class="col-sm-2 col-form-label">Password:</label>
+        <div class="col-sm-5">
+            <input type="password" class="form-control" name="password" id="pwd" placeholder="Enter your password" required>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label for="cpwd" class="col-sm-2 col-form-label">Confirm Password:</label>
+        <div class="col-sm-5">
+            <input type="password" class="form-control" name="confirm_pwd" id="cpwd" placeholder="Confirm password" required >
+        </div>
+    </div>
+    <p class="usr_error">{{ usr_error | safe }}</p>
+    <input type= "submit" class="submit btn btn-primary " value = "Submit">
+</form>
+{% endblock %}

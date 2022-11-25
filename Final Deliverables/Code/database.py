@@ -61,7 +61,7 @@ class Database:
         view_db = ibm_db.exec_immediate(self.conn,view_query)
         result = ibm_db.fetch_tuple(view_db)
 
-        return result[0]
+        return result
 
     def uid_view(self,email):
         view_query = f"""SELECT USER_ID FROM "GSN72184"."CREDENTIALS" WHERE email = '{email}'"""
@@ -92,12 +92,12 @@ class Database:
         
         return result_lst
     
-    def chart(self,dates):
+    def chart(self,dates,uid):
         expenses = []
         for i in dates:
             # i = i.replace('/','-')
             # print(i)
-            view_query = f"""SELECT SUM(Expense_Amt) FROM "GSN72184"."EXPENSE" WHERE Expense_Date = '{i}'"""
+            view_query = f"""SELECT SUM(Expense_Amt) FROM "GSN72184"."EXPENSE" WHERE Expense_Date = '{i}' AND USER_ID = '{uid}'"""
             view_db = ibm_db.exec_immediate(self.conn,view_query)
             result = ibm_db.fetch_tuple(view_db)
             expenses.append(result [0])
@@ -106,3 +106,17 @@ class Database:
                 expenses[i] = 0       
 
         return expenses
+
+    def pie_chart(self,uid,dates):
+        
+        results = {}
+        
+        for i in dates:
+            view_query = f"""SELECT Expense_name,SUM(EXPENSE_AMT) FROM EXPENSE WHERE Expense_Date = '{i}' AND USER_ID = '{uid}' GROUP BY EXPENSE_NAME"""
+            view_db = ibm_db.exec_immediate(self.conn,view_query)
+            result = ibm_db.fetch_tuple(view_db)
+
+            if result != False:
+                results[result[0]] = result[1]
+        
+        return results

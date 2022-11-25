@@ -1,19 +1,27 @@
-from flask import Flask,render_template,request,redirect, session, url_for,flash
-import database,send_email
+# Importing required packages
+from math import pi
+import pandas as pd
+import database,send_email,datetime,get_dates
+
 from bokeh.embed import components
 from bokeh.plotting import figure
 from bokeh.resources import INLINE
+from bokeh.palettes import Category20c
+from bokeh.transform import cumsum
+
+from flask import Flask,render_template,request,redirect, session, url_for,flash
 
 register_email = send_email.Register()
 
 db = database.Database()
+date = get_dates.DateTime() 
 
 app = Flask(__name__)
 app.secret_key = "a very secret  key"
 
 @app.route("/")
 def index():
-    return render_template('index.html')
+    return redirect(url_for('register'))
 
 @app.route("/register",methods = ['GET',"POST"])
 def register():
@@ -54,11 +62,11 @@ def login():
         email = request.form['email_id']
         pwd = request.form['password']
         result = db.lg_view(email)
-
+        print(db.lg_view(email))
         if not result:
             return render_template('login.html',usr_error = "Email id does'nt exists!")
             
-        if pwd != result:
+        if pwd != result[0]:
             return render_template('login.html',usr_error = "Password doesn't match")
         else:
             session['loggedin'] = True
@@ -68,18 +76,48 @@ def login():
         return render_template('login.html')
 
 @app.route("/dashboard")
+
 def dashboard():
-    
-    fig = figure(
-        title="Your Expenses Chart",
-        sizing_mode="stretch_width",
+
+    email = session['username']
+    user_id = db.uid_view(email)
+
+    x_axis = date.get_week()
+    bar_chart = bar_graph(user_id,x_axis)
+    pie_chart = pie_graph(user_id,x_axis)
+
+    expense_table = db.expense_view(user_id)
+
+    return render_template("dashboard.html",
+        details = expense_table,
+        js_resources=bar_chart[0],
+        css_resources=bar_chart[1],
+        plot_script=bar_chart[2],
+        plot_div=bar_chart[3],
+        pie_js_resources=pie_chart[0],
+        pie_css_resources=pie_chart[1],
+        pie_script=pie_chart[2],
+        pie_div=pie_chart[3]
     )
-    fig.line(
-        [1, 2, 3, 4],
-        [1.7, 2.2, 4.6, 3.9],
-        color='navy',
-        line_width=1
-    )
+
+def bar_graph(user_id,x_axis):
+    y_axis = db.chart(x_axis,user_id) 
+
+    fig =figure(
+        x_range=x_axis,  
+        title="Your Weekly Expenses",
+        toolbar_location="right", 
+        tools="save,hover",
+        tooltips="@x: ₹@top",
+        width = 700,
+        x_axis_label = "Dates of your Past 7 days",
+        y_axis_label = "Amount you have spent"
+        )
+    fig.toolbar.logo = None
+    fig.vbar(x=x_axis, top=y_axis, width=0.9)
+
+    fig.xgrid.grid_line_color = None
+    fig.y_range.start = 0
 
     # grab the static resources
     js_resources = INLINE.render_js()
@@ -87,16 +125,39 @@ def dashboard():
 
     # render template
     script, div = components(fig)   
-    email = session['username']
-    user_id = db.uid_view(email)
-    expense_table = db.expense_view(user_id)
+    print(div)
+    return [js_resources,css_resources,script,div]
 
-    return render_template("dashboard.html",
-        details = expense_table,
-        plot_script=script,
-        plot_div=div,
-        js_resources=js_resources,
-        css_resources=css_resources)
+def pie_graph(user_id,x_axis):
+    values = db.pie_chart(user_id,x_axis)
+    data = pd.Series(values).reset_index(name='Expense_amt').rename(columns={'index': 'Expense_Name'})
+    
+    data['angle'] = data['Expense_amt']/data['Expense_amt'].sum() * 2*pi
+    data['color'] = Category20c[len(values)]
+
+    p = figure(
+            height=350, 
+            title="Expense Category Pie Chart", 
+            toolbar_location='right',
+            tools="save,hover", 
+            tooltips="@Expense_Name: ₹@Expense_amt", 
+            x_range=(-0.5, 1.0)
+        )
+    p.toolbar.logo = None
+    p.wedge(x=0, y=1, radius=0.4,
+            start_angle=cumsum('angle', include_zero=True), end_angle=cumsum('angle'),
+            line_color="white", fill_color='color', legend_field='Expense_Name', source=data)
+
+    p.axis.axis_label = None
+    p.axis.visible = False
+    p.grid.grid_line_color = None
+
+    js_resources = INLINE.render_js()
+    css_resources = INLINE.render_css()
+
+    # render template
+    script, div = components(p)
+    return [js_resources,css_resources,script,div]
 
 @app.route("/wallet",methods = ['GET',"POST"])
 def wallet():
@@ -127,4 +188,5 @@ def logout():
 
 if __name__ == '__main__':
     app.debug = True
-    app.run()
+    app.run(host='0.0.0.0', port=5000)
+

@@ -109,18 +109,36 @@
     </nav>
 
     <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+
+
+      <div class="container text-center">
+        <div class="row">
+          <div class="col">
+            <div class = "mt-5 graph">
+              {{ pie_js_resources|safe }}
+              {{ pie_css_resources|safe }}
+              {{ pie_script|safe }}
+            </div>
+            <div>
+              {{ pie_div|safe }}
+            </div>
+          </div>
+          <div class="col">
+            <div class = "mt-5 graph">
+            {{ js_resources|safe }}
+            {{ css_resources|safe }}
+            {{ plot_script|safe }}
+            </div>
+            <div>
+              {{ plot_div|safe }}
+            </div>
+          </div>
+        </div>
+      </div>
       
-      <head>
-        <meta charset="utf-8">
-        <meta http-equiv="content-type" content="text/html; charset=utf-8">
-        <title>Embed Demo</title>
-        {{ js_resources|indent(4)|safe }}
-        {{ css_resources|indent(4)|safe }}
-        {{ plot_script|indent(4)|safe }}
-      </head>
-      <body>
-        {{ plot_div|indent(4)|safe }}
-      </body>
+      
+
+      
 
       <h2 style="margin-top: 5%;">Your Expenses</h2>
       <div class="table-responsive">
